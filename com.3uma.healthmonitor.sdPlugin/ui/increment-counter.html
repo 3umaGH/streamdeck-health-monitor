@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head lang="en">
+    <title>Settings</title>
+    <meta charset="utf-8" />
+    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+  </head>
+
+  <body>
+    <sdpi-item label="Title">
+      <sdpi-textfield setting="title" placeholder="Enter the title to display on the button"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="Path">
+      <sdpi-textfield setting="path" placeholder="Enter the service path"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="OK status code">
+      <sdpi-textfield setting="okStatusCode" placeholder="Enter the OK status code"></sdpi-textfield>
+    </sdpi-item>
+    <sdpi-item label="Interval (ms)">
+      <sdpi-range setting="intervalMs" min="1000" max="60000" step="1000" showlabels></sdpi-range>
+    </sdpi-item>
+  </body>
+</html>
