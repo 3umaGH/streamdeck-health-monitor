@@ -1,7 +1,8 @@
 {
     "scripts": {
         "build": "rollup -c",
-        "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.3uma.healthmonitor\""
+        "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.3uma.healthmonitor\"",
+        "pack": "streamdeck pack com.3uma.healthmonitor.sdPlugin --output dist/healthmonitor.sdPlugin"
     },
     "type": "module",
     "devDependencies": {
@@ -19,6 +20,7 @@
     "dependencies": {
         "@elgato/streamdeck": "^2.0.0",
         "@rollup/plugin-json": "^6.1.0",
-        "canvas": "^3.2.1"
+        "canvas": "^3.2.1",
+        "node-fetch": "^3.3.2"
     }
 }

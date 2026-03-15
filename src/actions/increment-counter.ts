@@ -1,5 +1,6 @@
 import { action, DidReceiveSettingsEvent, KeyUpEvent, SingletonAction, WillAppearEvent } from '@elgato/streamdeck'
 import { createCanvas } from 'canvas'
+import fetch from 'node-fetch'
 
 /**
  * An example action class that displays a count that increments by one each time the button is pressed.
