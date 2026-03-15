@@ -1,68 +1,59 @@
-import { action, DidReceiveSettingsEvent, KeyUpEvent, SingletonAction, WillAppearEvent } from '@elgato/streamdeck'
+import { action, DidReceiveSettingsEvent, KeyUpEvent, SingletonAction, WillAppearEvent, WillDisappearEvent } from '@elgato/streamdeck'
 import { createCanvas } from 'canvas'
 import fetch from 'node-fetch'
 
-/**
- * An example action class that displays a count that increments by one each time the button is pressed.
- */
+type AnyEvent = WillAppearEvent<Settings> | DidReceiveSettingsEvent<Settings> | KeyUpEvent<Settings>
+
+type InstanceState = {
+  intervalId?: NodeJS.Timeout
+}
+
 @action({ UUID: 'com.3uma.healthmonitor.increment' })
 export class IncrementCounter extends SingletonAction<Settings> {
-  private intervalId?: NodeJS.Timeout
+  private readonly instances = new Map<string, InstanceState>()
 
-  /**
-   * The {@link SingletonAction.onWillAppear} event is useful for setting the visual representation of an action when it becomes visible. This could be due to the Stream Deck first
-   * starting up, or the user navigating between pages / folders etc.. There is also an inverse of this event in the form of {@link streamDeck.client.onWillDisappear}. In this example,
-   * we're setting the title to the "count" that is incremented in {@link IncrementCounter.onKeyDown}.
-   */
-  override onWillAppear(ev: WillAppearEvent<Settings>): void | Promise<void> {
-    this.startTimer(ev)
-    ev.action.setImage(this.createKeyImage('#000000ff', 'Loading...'))
-    return
+  private getInstance(id: string): InstanceState {
+    if (!this.instances.has(id)) this.instances.set(id, {})
+    return this.instances.get(id)!
   }
 
-  override onDidReceiveSettings?(ev: DidReceiveSettingsEvent<Settings>): void | Promise<void> {
-    return this.debounce(() => this.startTimer(ev), 1000)()
+  override onWillAppear(ev: WillAppearEvent<Settings>): void | Promise<void> {
+    ev.action.setImage(this.createKeyImage('#000000ff', 'Loading...'))
+    return this.startTimer(ev)
+  }
+
+  override onWillDisappear(ev: WillDisappearEvent<Settings>): void | Promise<void> {
+    const state = this.instances.get(ev.action.id)
+    if (state?.intervalId) clearInterval(state.intervalId)
+    this.instances.delete(ev.action.id)
+  }
+
+  override onDidReceiveSettings(ev: DidReceiveSettingsEvent<Settings>): void | Promise<void> {
+    const state = this.getInstance(ev.action.id)
+    if (state.intervalId) clearInterval(state.intervalId)
+    state.intervalId = setTimeout(() => this.startTimer(ev), 1000) as unknown as NodeJS.Timeout
   }
 
   override onKeyUp(ev: KeyUpEvent<Settings>): Promise<void> | void {
     return this.startTimer(ev)
   }
 
-  private debounce(fn: () => void, delay: number): () => void {
-    let timeoutId: NodeJS.Timeout | null = null
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-      timeoutId = setTimeout(() => {
-        fn()
-        timeoutId = null
-      }, delay)
-    }
-  }
-
-  private async startTimer(
-    ev: WillAppearEvent<Settings> | DidReceiveSettingsEvent<Settings> | KeyUpEvent<Settings>,
-  ): Promise<void> {
+  private async startTimer(ev: AnyEvent): Promise<void> {
     const settings = await ev.action.getSettings()
 
     if (!settings?.path) {
-      ev.action.setTitle('No path')
+      ev.action.setImage(this.createKeyImage('#555555', 'No path'))
       return
     }
 
-    this.updateStatus(ev, settings.path)
+    const state = this.getInstance(ev.action.id)
+    if (state.intervalId) clearInterval(state.intervalId)
 
-    if (this.intervalId) {
-      clearInterval(this.intervalId)
-    }
-    this.intervalId = setInterval(() => this.updateStatus(ev, settings.path), settings.intervalMs ?? 5000)
+    await this.updateStatus(ev, settings.path)
+    state.intervalId = setInterval(() => this.updateStatus(ev, settings.path), settings.intervalMs ?? 5000)
   }
 
-  private async updateStatus(
-    ev: WillAppearEvent<Settings> | DidReceiveSettingsEvent<Settings> | KeyUpEvent<Settings>,
-    path: string | undefined,
-  ): Promise<void> {
+  private async updateStatus(ev: AnyEvent, path: string | undefined): Promise<void> {
     if (!path) {
       return
     }
