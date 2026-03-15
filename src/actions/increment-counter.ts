@@ -44,9 +44,9 @@ export class IncrementCounter extends SingletonAction<Settings> {
   private async startTimer(
     ev: WillAppearEvent<Settings> | DidReceiveSettingsEvent<Settings> | KeyUpEvent<Settings>,
   ): Promise<void> {
-    const settings = ev.payload.settings ?? ev.action.getSettings()
+    const settings = await ev.action.getSettings()
 
-    if (!settings || !settings.path) {
+    if (!settings?.path) {
       ev.action.setTitle('No path')
       return
     }
@@ -68,7 +68,7 @@ export class IncrementCounter extends SingletonAction<Settings> {
     }
 
     try {
-      const settings = ev.payload.settings ?? ev.action.getSettings()
+      const settings = await ev.action.getSettings()
       const res = await fetch(path)
       const ok = res.status == (settings.okStatusCode ?? 200)
       const status = ok ? `OK (${res.status})` : `ERR (${res.status})`

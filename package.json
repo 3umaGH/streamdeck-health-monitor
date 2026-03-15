@@ -2,7 +2,7 @@
     "scripts": {
         "build": "rollup -c",
         "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.3uma.healthmonitor\"",
-        "pack": "streamdeck pack com.3uma.healthmonitor.sdPlugin --output dist/healthmonitor.sdPlugin"
+        "pack": "streamdeck pack -f com.3uma.healthmonitor.sdPlugin --output dist/healthmonitor.sdPlugin"
     },
     "type": "module",
     "devDependencies": {
