@@ -1,4 +1,11 @@
-import { action, DidReceiveSettingsEvent, KeyUpEvent, SingletonAction, WillAppearEvent, WillDisappearEvent } from '@elgato/streamdeck'
+import {
+  action,
+  DidReceiveSettingsEvent,
+  KeyUpEvent,
+  SingletonAction,
+  WillAppearEvent,
+  WillDisappearEvent,
+} from '@elgato/streamdeck'
 import { createCanvas } from 'canvas'
 import fetch from 'node-fetch'
 
@@ -6,6 +13,7 @@ type AnyEvent = WillAppearEvent<Settings> | DidReceiveSettingsEvent<Settings> | 
 
 type InstanceState = {
   intervalId?: NodeJS.Timeout
+  debounceId?: NodeJS.Timeout
 }
 
 @action({ UUID: 'com.3uma.healthmonitor.increment' })
@@ -25,13 +33,14 @@ export class IncrementCounter extends SingletonAction<Settings> {
   override onWillDisappear(ev: WillDisappearEvent<Settings>): void | Promise<void> {
     const state = this.instances.get(ev.action.id)
     if (state?.intervalId) clearInterval(state.intervalId)
+    if (state?.debounceId) clearTimeout(state.debounceId)
     this.instances.delete(ev.action.id)
   }
 
   override onDidReceiveSettings(ev: DidReceiveSettingsEvent<Settings>): void | Promise<void> {
     const state = this.getInstance(ev.action.id)
-    if (state.intervalId) clearInterval(state.intervalId)
-    state.intervalId = setTimeout(() => this.startTimer(ev), 1000) as unknown as NodeJS.Timeout
+    if (state.debounceId) clearTimeout(state.debounceId)
+    state.debounceId = setTimeout(() => this.startTimer(ev), 1000)
   }
 
   override onKeyUp(ev: KeyUpEvent<Settings>): Promise<void> | void {
@@ -39,7 +48,7 @@ export class IncrementCounter extends SingletonAction<Settings> {
   }
 
   private async startTimer(ev: AnyEvent): Promise<void> {
-    const settings = await ev.action.getSettings()
+    const settings = ev.payload.settings
 
     if (!settings?.path) {
       ev.action.setImage(this.createKeyImage('#555555', 'No path'))
@@ -49,18 +58,17 @@ export class IncrementCounter extends SingletonAction<Settings> {
     const state = this.getInstance(ev.action.id)
     if (state.intervalId) clearInterval(state.intervalId)
 
-    await this.updateStatus(ev, settings.path)
-    state.intervalId = setInterval(() => this.updateStatus(ev, settings.path), settings.intervalMs ?? 5000)
+    await this.updateStatus(ev, settings)
+    state.intervalId = setInterval(() => this.updateStatus(ev, settings), settings.intervalMs ?? 30000)
   }
 
-  private async updateStatus(ev: AnyEvent, path: string | undefined): Promise<void> {
-    if (!path) {
+  private async updateStatus(ev: AnyEvent, settings: Settings): Promise<void> {
+    if (!settings.path) {
       return
     }
 
     try {
-      const settings = await ev.action.getSettings()
-      const res = await fetch(path)
+      const res = await fetch(settings.path)
       const ok = res.status == (settings.okStatusCode ?? 200)
       const status = ok ? `OK (${res.status})` : `ERR (${res.status})`
       const time = new Date().toLocaleTimeString()
