@@ -2,6 +2,18 @@
 
 A Stream Deck plugin that monitors the health of a service endpoint and displays its status directly on a button.
 
+## Linux install
+`apt install ttf-mscorefonts-installer`
+`apt install libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential`
+`cd ~/.config/opendeck/plugins/com.3uma.healthmonitor.sdPlugin`
+`npm install canvas`
+
+Add to `/home/sp/.config/opendeck/plugins/com.3uma.healthmonitor.sdPlugin/manifest.json` under `OS`
+```		
+{
+			"Platform": "linux"
+}
+```
 ## Features
 
 - Polls a URL on a configurable interval
