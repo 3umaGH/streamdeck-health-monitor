@@ -17,6 +17,7 @@ const config = {
 	external: ["canvas"],
 	output: {
 		file: `${sdPlugin}/bin/plugin.js`,
+		inlineDynamicImports: true,
 		sourcemap: isWatching,
 		sourcemapPathTransform: (relativeSourcePath, sourcemapPath) => {
 			return url.pathToFileURL(path.resolve(path.dirname(sourcemapPath), relativeSourcePath)).href;
